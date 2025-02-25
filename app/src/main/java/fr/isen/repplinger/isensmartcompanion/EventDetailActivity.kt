@@ -55,7 +55,7 @@ class EventDetailActivity : ComponentActivity() {
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Title: ${event?.title}",
+                        text = "Titre: ${event?.title}",
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -70,12 +70,12 @@ class EventDetailActivity : ComponentActivity() {
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = "Location: ${event?.location}",
+                        text = "Localisation: ${event?.location}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = "Category: ${event?.category}",
+                        text = "Categorie: ${event?.category}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )

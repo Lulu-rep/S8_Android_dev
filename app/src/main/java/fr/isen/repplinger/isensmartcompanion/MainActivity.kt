@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.Clear
@@ -40,9 +43,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +63,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.ai.client.generativeai.GenerativeModel
+import fr.isen.repplinger.isensmartcompanion.retrofit.RetrofitInstance
 import fr.isen.repplinger.isensmartcompanion.ui.theme.ISENSmartCompanionTheme
+import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -68,7 +79,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ISENSmartCompanionTheme {
                 Scaffold(modifier = Modifier.fillMaxSize())
-{
+                {
                     MainPage()
                 }
             }
@@ -78,10 +89,10 @@ class MainActivity : ComponentActivity() {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainPage(){
+fun MainPage() {
     val navController = rememberNavController()
-    Scaffold (bottomBar = { BottomNavigationBar(navController)}
-    ){
+    Scaffold(bottomBar = { BottomNavigationBar(navController) }
+    ) {
         NavigationHost(navController)
     }
 }
@@ -114,14 +125,41 @@ fun BottomNavigationBar(navController: NavController) {
 fun NavigationHost(navController: NavHostController) {
     NavHost(navController, startDestination = "home") {
         composable("home") { MainScreen() }
-        composable("events") { EventsScreen(navController) }
+        composable("events") { EventsScreen() }
         composable("history") { HistoryScreen() }
     }
 }
 
 @Composable
-fun EventsScreen(navController: NavController) {
+fun EventsScreen() {
+    var events by remember { mutableStateOf<List<EventModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        val call = RetrofitInstance.api.getEvents()
+        call.enqueue(object : Callback<List<EventModel>> {
+            override fun onResponse(
+                call: Call<List<EventModel>>,
+                response: Response<List<EventModel>>
+            ) {
+                if (response.isSuccessful) {
+                    events = response.body() ?: emptyList()
+                    isLoading = false
+                } else {
+                    errorMessage = "An error occurred: ${response.errorBody().toString()}"
+                    isLoading = false
+                }
+            }
+
+            override fun onFailure(call: Call<List<EventModel>>, t: Throwable) {
+                errorMessage = "An error occurred: ${t.message}"
+                isLoading = false
+            }
+        })
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -129,18 +167,15 @@ fun EventsScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "Events Screen", modifier = Modifier.padding(16.dp))
+        if (isLoading) {
+            Text(text = "Loading...")
+        } else if (errorMessage != null) {
+            Text(text = "Error: $errorMessage")
+        }
         LazyColumn(
             modifier = Modifier.padding(bottom = 64.dp)
         ) {
-            items(10) { index ->
-                val event = EventModel().apply {
-                    id = index
-                    title = "Event $index"
-                    description = "Description for Event $index"
-                    date = "2024-12-0${index + 1}"
-                    location = "Location $index"
-                    category = "Category $index"
-                }
+            items(events) { event ->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -166,7 +201,8 @@ fun EventItem(event: EventModel) {
             .fillMaxWidth()
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp)
+            defaultElevation = 10.dp
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -197,29 +233,53 @@ fun HistoryScreen() {
 fun MainScreen() {
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
-    var response by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize()
-        .padding(top=16.dp)) {
+    var inputHistory by remember { mutableStateOf(listOf<String>()) }
+    var aiResponses by remember { mutableStateOf(listOf<String>()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 16.dp)
+    ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
-        )
-        {
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.la_mere_patriev3),
                 contentDescription = "La mère patrie",
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(100.dp)
             )
             Text(
                 text = "ISEN Smart Compagnion",
                 modifier = Modifier.padding(16.dp)
             )
-            Text(
-                text = "Response :  $response",
-                modifier = Modifier.padding(top = 64.dp)
-            )
-            Spacer(modifier = Modifier.weight(1f))
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Column {
+            inputHistory.forEachIndexed { index, input ->
+                Text(
+                    text = "You: $input",
+                    modifier = Modifier.padding(16.dp)
+                )
+                if (index < aiResponses.size) {
+                    Text(
+                        text = "Gemini: ${aiResponses[index]}",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+                }
+            }
+
             TextField(
                 value = text,
                 onValueChange = { text = it },
@@ -233,8 +293,13 @@ fun MainScreen() {
                         onClick = {
                             Log.i("MainPage", "Send: $text")
                             Toast.makeText(context, "Send: $text", Toast.LENGTH_LONG).show()
-                            response = text
-                            text = ""
+                            inputHistory = inputHistory + text
+                            coroutineScope.launch {
+                                val response = askGeminiAi(text)
+                                aiResponses = aiResponses + response
+                                text = ""
+                            }
+
                         }
                     ) {
                         Box(
@@ -253,6 +318,21 @@ fun MainScreen() {
                 }
             )
         }
+    }
+}
+
+suspend fun askGeminiAi(question: String): String {
+    return try {
+    val generativeModel = GenerativeModel(
+        modelName = "gemini-1.5-flash",
+        apiKey = "AIzaSyAwCohjvlVfgydfqpSJjL9F3QE_x4g01H4"
+    )
+    Log.i("MainPage", "Ask Gemini AI: $question")
+    val response = generativeModel.generateContent(question)
+        response.text.toString()
+    } catch (e: Exception) {
+        Log.e("MainPage", "Error asking Gemini AI: ${e.message}")
+        "Error: ${e.message}"
     }
 }
 
