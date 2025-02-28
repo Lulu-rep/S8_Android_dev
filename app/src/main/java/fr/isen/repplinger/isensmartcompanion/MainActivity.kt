@@ -70,32 +70,37 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+    private lateinit var database: AppDatabase
+    private lateinit var qaHistoryDao: QAHistoryDao
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        database = AppDatabase.getDatabase(this)
+        qaHistoryDao = database.qaHistoryDao()
         setContent {
+            val navController = rememberNavController()
             ISENSmartCompanionTheme {
-                Scaffold(modifier = Modifier.fillMaxSize())
-                {
-                    MainPage()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = { BottomNavigationBar(navController) }
+                ) { innerPadding ->
+                    NavHost(
+                        navController,
+                        startDestination = "home",
+                    ) {
+                        composable("home") { MainScreen(qaHistoryDao,modifier = Modifier.padding(innerPadding)) }
+                        composable("events") { EventsScreen(modifier = Modifier.padding(innerPadding)) }
+                        composable("history") { HistoryScreen(modifier = Modifier.padding(innerPadding)) }
+                    }
                 }
             }
-        }
     }
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun MainPage() {
-    val navController = rememberNavController()
-    Scaffold(bottomBar = { BottomNavigationBar(navController) }
-    ) {
-        NavigationHost(navController)
-    }
-}
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -121,17 +126,9 @@ fun BottomNavigationBar(navController: NavController) {
     }
 }
 
-@Composable
-fun NavigationHost(navController: NavHostController) {
-    NavHost(navController, startDestination = "home") {
-        composable("home") { MainScreen() }
-        composable("events") { EventsScreen() }
-        composable("history") { HistoryScreen() }
-    }
-}
 
 @Composable
-fun EventsScreen() {
+fun EventsScreen(modifier : Modifier) {
     var events by remember { mutableStateOf<List<EventModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -161,7 +158,7 @@ fun EventsScreen() {
         })
     }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -217,20 +214,83 @@ fun EventItem(event: EventModel) {
 }
 
 @Composable
-fun HistoryScreen() {
+fun HistoryScreen(modifier : Modifier) {
+    val context = LocalContext.current
+    val database = AppDatabase.getDatabase(context)
+    val qaHistoryDao = database.qaHistoryDao()
+    var history by remember { mutableStateOf<List<QAHistory>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        try {
+            history = qaHistoryDao.getAll()
+            isLoading = false
+        } catch (e: Exception) {
+            errorMessage = "An error occurred: ${e.message}"
+            isLoading = false
+        }
+    }
+
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "History Screen", modifier = Modifier.padding(16.dp))
+        if (isLoading) {
+            Text(text = "Loading...")
+        } else if (errorMessage != null) {
+            Text(text = "Error: $errorMessage")
+        } else {
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        qaHistoryDao.deleteAll()
+                        history = emptyList()
+                    }
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text("Delete All")
+            }
+            LazyColumn(
+                modifier = Modifier.padding(bottom = 64.dp)
+            ) {
+                items(history) { qaHistory ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    ) {
+                        Column {
+                            Text(text = "Date: ${qaHistory.date}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Question: ${qaHistory.question}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Answer: ${qaHistory.answer}", style = MaterialTheme.typography.bodyMedium)
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        qaHistoryDao.delete(qaHistory)
+                                        history = qaHistoryDao.getAll()
+                                    }
+                                },
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Text("Delete")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 
 @Composable
-fun MainScreen() {
+fun MainScreen(qaHistoryDao: QAHistoryDao,modifier :Modifier) {
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     var inputHistory by remember { mutableStateOf(listOf<String>()) }
@@ -238,9 +298,7 @@ fun MainScreen() {
     val coroutineScope = rememberCoroutineScope()
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 16.dp)
+        modifier = modifier.fillMaxSize().padding(top = 16.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -297,9 +355,19 @@ fun MainScreen() {
                             coroutineScope.launch {
                                 val response = askGeminiAi(text)
                                 aiResponses = aiResponses + response
+
+                                val qaHistory = QAHistory(
+                                    question = text,
+                                    answer = response,
+                                    date = Date()
+                                )
+                                try {
+                                    qaHistoryDao.insert(qaHistory)
+                                } catch (e: Exception) {
+                                    Log.e("MainPage", "Error inserting QAHistory: ${e.message}")
+                                }
                                 text = ""
                             }
-
                         }
                     ) {
                         Box(
@@ -321,25 +389,22 @@ fun MainScreen() {
     }
 }
 
+@SuppressLint("SuspiciousIndentation")
 suspend fun askGeminiAi(question: String): String {
     return try {
-    val generativeModel = GenerativeModel(
-        modelName = "gemini-1.5-flash",
-        apiKey = "AIzaSyAwCohjvlVfgydfqpSJjL9F3QE_x4g01H4"
-    )
-    Log.i("MainPage", "Ask Gemini AI: $question")
-    val response = generativeModel.generateContent(question)
-        response.text.toString()
+        val generativeModel = GenerativeModel(
+            modelName = "gemini-1.5-flash",
+            apiKey = BuildConfig.API_KEY
+        )
+        Log.i("Generative Model", generativeModel.apiKey)
+        val response = generativeModel.generateContent(question)
+        val answer = response.text.toString()
+
+        answer
     } catch (e: Exception) {
         Log.e("MainPage", "Error asking Gemini AI: ${e.message}")
         "Error: ${e.message}"
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun Main_pagePreview() {
-    ISENSmartCompanionTheme {
-        MainPage()
-    }
 }
