@@ -9,5 +9,6 @@ data class EventModel
     var description: String,
     var date: String,
     var location: String,
-    var category: String
+    var category: String,
+    var isPinned: Boolean = false
 ): Serializable
