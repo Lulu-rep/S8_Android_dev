@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,12 +74,13 @@ fun HistoryScreen(modifier : Modifier) {
                 modifier = Modifier.padding(bottom = 64.dp)
             ) {
                 items(history) { qaHistory ->
-                    Box(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
+                            .padding(8.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
                     ) {
-                        Column {
+                        Column ( modifier = Modifier.padding(16.dp)) {
                             Text(text = "Date: ${qaHistory.date}", style = MaterialTheme.typography.bodyMedium)
                             Text(text = "Question: ${qaHistory.question}", style = MaterialTheme.typography.bodyMedium)
                             Text(text = "Answer: ${qaHistory.answer}", style = MaterialTheme.typography.bodyMedium)
