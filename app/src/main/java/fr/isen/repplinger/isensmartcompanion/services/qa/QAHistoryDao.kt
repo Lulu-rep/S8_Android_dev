@@ -1,9 +1,10 @@
-package fr.isen.repplinger.isensmartcompanion
+package fr.isen.repplinger.isensmartcompanion.services.qa
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import fr.isen.repplinger.isensmartcompanion.models.QAHistory
 
 @Dao
 interface QAHistoryDao {

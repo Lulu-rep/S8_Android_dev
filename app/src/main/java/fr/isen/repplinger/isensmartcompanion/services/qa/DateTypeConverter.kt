@@ -1,5 +1,5 @@
 
-package fr.isen.repplinger.isensmartcompanion
+package fr.isen.repplinger.isensmartcompanion.services.qa
 
 import androidx.room.TypeConverter
 import java.util.Date

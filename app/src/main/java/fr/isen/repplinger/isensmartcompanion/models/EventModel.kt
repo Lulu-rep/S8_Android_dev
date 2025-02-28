@@ -1,7 +1,5 @@
-package fr.isen.repplinger.isensmartcompanion
+package fr.isen.repplinger.isensmartcompanion.models
 
-import android.os.Parcel
-import android.os.Parcelable
 import java.io.Serializable
 
 data class EventModel

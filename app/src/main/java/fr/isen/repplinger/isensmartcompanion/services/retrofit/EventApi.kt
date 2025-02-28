@@ -1,6 +1,6 @@
-package fr.isen.repplinger.isensmartcompanion.retrofit
+package fr.isen.repplinger.isensmartcompanion.services.retrofit
 
-import fr.isen.repplinger.isensmartcompanion.EventModel
+import fr.isen.repplinger.isensmartcompanion.models.EventModel
 import retrofit2.Call
 import retrofit2.http.GET
 

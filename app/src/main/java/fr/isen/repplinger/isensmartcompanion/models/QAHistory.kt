@@ -1,5 +1,4 @@
-
-package fr.isen.repplinger.isensmartcompanion
+package fr.isen.repplinger.isensmartcompanion.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
