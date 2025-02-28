@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import fr.isen.repplinger.isensmartcompanion.models.QAHistory
 
-@Database(entities = [QAHistory::class], version = 1)
+@Database(entities = [QAHistory::class], version = 1, exportSchema = false)
 @TypeConverters(DateTypeConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun qaHistoryDao(): QAHistoryDao
