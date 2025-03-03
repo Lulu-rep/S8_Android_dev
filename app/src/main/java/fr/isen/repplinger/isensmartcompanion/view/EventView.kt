@@ -1,5 +1,6 @@
 package fr.isen.repplinger.isensmartcompanion.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.gson.Gson
 import fr.isen.repplinger.isensmartcompanion.EventDetailActivity
 import fr.isen.repplinger.isensmartcompanion.models.EventModel
 import fr.isen.repplinger.isensmartcompanion.services.notification.sendNotification
@@ -111,7 +113,7 @@ fun EventsScreen(modifier: Modifier) {
 @Composable
 fun EventItem(event: EventModel, sharedPreferences: SharedPreferences) {
     val context = LocalContext.current
-    var isPinned by remember { mutableStateOf(sharedPreferences.getBoolean(event.title, false)) }
+    var isPinned by remember { mutableStateOf(sharedPreferences.getBoolean(event.id, false)) }
     val coroutineScope = rememberCoroutineScope()
 
     Card(
@@ -125,10 +127,10 @@ fun EventItem(event: EventModel, sharedPreferences: SharedPreferences) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Row (
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
-            ){
+            ) {
                 Text(text = event.title, style = MaterialTheme.typography.titleLarge)
                 Icon(
                     imageVector = if (isPinned) Icons.Default.Clear else Icons.Default.Notifications,
@@ -156,9 +158,22 @@ fun EventItem(event: EventModel, sharedPreferences: SharedPreferences) {
     }
 }
 
+@SuppressLint("MutatingSharedPrefs")
 fun savePinnedState(sharedPreferences: SharedPreferences, event: EventModel) {
     with(sharedPreferences.edit()) {
-        putBoolean(event.title, event.isPinned)
+        putBoolean(event.id, event.isPinned)
+        if (event.isPinned) {
+            val eventJson = Gson().toJson(event)
+            putString(event.id + "_json", eventJson)
+            val eventIds = sharedPreferences.getStringSet("attending_events", mutableSetOf()) ?: mutableSetOf()
+            eventIds.add(event.id)
+            putStringSet("attending_events", eventIds)
+        } else {
+            remove(event.id + "_json")
+            val eventIds = sharedPreferences.getStringSet("attending_events", mutableSetOf()) ?: mutableSetOf()
+            eventIds.remove(event.id)
+            putStringSet("attending_events", eventIds)
+        }
         apply()
     }
 }

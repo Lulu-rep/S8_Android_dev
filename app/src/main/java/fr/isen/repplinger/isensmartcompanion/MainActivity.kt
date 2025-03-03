@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import fr.isen.repplinger.isensmartcompanion.services.qa.AppDatabase
 import fr.isen.repplinger.isensmartcompanion.services.qa.QAHistoryDao
 import fr.isen.repplinger.isensmartcompanion.ui.theme.ISENSmartCompanionTheme
+import fr.isen.repplinger.isensmartcompanion.view.AgendaScreen
 import fr.isen.repplinger.isensmartcompanion.view.EventsScreen
 import fr.isen.repplinger.isensmartcompanion.view.HistoryScreen
 import fr.isen.repplinger.isensmartcompanion.view.MainScreen
@@ -63,6 +64,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             )
                         }
+                        composable("agenda"){
+                            AgendaScreen(
+                                modifier = Modifier.padding(
+                                    innerPadding
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -73,7 +81,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun BottomNavigationBar(navController: NavController) {
         NavigationBar {
-            val items = listOf("home", "events", "history")
+            val items = listOf("home", "events", "history", "agenda")
             items.forEach { screen ->
                 NavigationBarItem(
                     icon = {
@@ -81,6 +89,7 @@ class MainActivity : ComponentActivity() {
                             "home" -> Icon(Icons.Default.Home, contentDescription = null)
                             "events" -> Icon(Icons.Rounded.DateRange, contentDescription = null)
                             "history" -> Icon(Icons.Rounded.Menu, contentDescription = null)
+                            "agenda" -> Icon(Icons.Rounded.DateRange, contentDescription = null)
                             else -> Icon(Icons.Default.Clear, contentDescription = null)
                         }
                     },
