@@ -1,5 +1,8 @@
 # S8_Android_Project 
 
+## Setup for notifications
+
+Please ensure that notifications are enabled for the application in your phone settings
 
 ## Setup for Gemini Key (if necessary)
 
