@@ -1,6 +1,5 @@
 package fr.isen.repplinger.isensmartcompanion.view
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,9 +69,7 @@ fun HistoryScreen(modifier : Modifier) {
             ) {
                 Text("Delete All")
             }
-            LazyColumn(
-                modifier = Modifier.padding(bottom = 64.dp)
-            ) {
+            LazyColumn{
                 items(history) { qaHistory ->
                     Card(
                         modifier = Modifier

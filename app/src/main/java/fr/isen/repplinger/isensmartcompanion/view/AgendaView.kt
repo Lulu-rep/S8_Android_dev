@@ -12,9 +12,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -22,7 +19,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import fr.isen.repplinger.isensmartcompanion.models.EventModel
 import java.io.InputStreamReader
-import java.util.Date
 
 data class Course(
     val courseName: String,
@@ -87,10 +83,4 @@ fun loadAttendingEvents(sharedPreferences: SharedPreferences): List<EventModel> 
         }
     }
     return events
-}
-
-fun findClosestEventOrCourse(courses: List<Course>, events: List<EventModel>): Any? {
-    val allItems = courses.map { it.date to it } + events.map { it.date to it }
-    val closestItem = allItems.minByOrNull { (date, _) -> Date(date).time }
-    return closestItem?.second
 }

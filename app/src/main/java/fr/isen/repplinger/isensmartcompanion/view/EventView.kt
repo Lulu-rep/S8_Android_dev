@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.gson.Gson
 import fr.isen.repplinger.isensmartcompanion.EventDetailActivity
@@ -88,9 +89,7 @@ fun EventsScreen(modifier: Modifier) {
         } else if (errorMessage != null) {
             Text(text = "Error: $errorMessage")
         }
-        LazyColumn(
-            modifier = Modifier.padding(bottom = 64.dp)
-        ) {
+        LazyColumn {
             items(events) { event ->
                 Box(
                     modifier = Modifier
@@ -131,7 +130,11 @@ fun EventItem(event: EventModel, sharedPreferences: SharedPreferences) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = event.title, style = MaterialTheme.typography.titleLarge)
+                Text(text = event.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f))
                 Icon(
                     imageVector = if (isPinned) Icons.Default.Clear else Icons.Default.Notifications,
                     contentDescription = null,
